@@ -6,8 +6,9 @@ import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { StarIcon } from 'lucide-react'
+import { StarIcon, ExternalLink, BookmarkPlus, Play } from 'lucide-react'
 import { useAuth } from '@/context/auth-context'
+import { getCrunchyrollUrl } from '@/lib/utils'
 
 export default function AnimePage({ params }: { params: { id: string } }) {
   const [anime, setAnime] = useState<Anime | null>(null)
@@ -21,7 +22,7 @@ export default function AnimePage({ params }: { params: { id: string } }) {
         const data = await getAnimeById(parseInt(params.id))
         setAnime(data)
       } catch (err) {
-        setError('Error al cargar el anime')
+        setError('Error loading anime')
         console.error(err)
       } finally {
         setLoading(false)
@@ -49,13 +50,15 @@ export default function AnimePage({ params }: { params: { id: string } }) {
         <div className="container mx-auto px-4">
           <Card className="w-full border-slate-800 bg-slate-900">
             <CardContent className="p-6 text-center text-slate-400">
-              {error || 'No se pudo cargar el anime'}
+              {error || 'Could not load anime'}
             </CardContent>
           </Card>
         </div>
       </div>
     )
   }
+
+  const crunchyrollUrl = getCrunchyrollUrl(anime.title.english || anime.title.romaji)
 
   return (
     <div className="min-h-screen bg-slate-950 py-8">
@@ -78,7 +81,7 @@ export default function AnimePage({ params }: { params: { id: string } }) {
               {/* Content overlay */}
               <div className="absolute bottom-0 left-0 right-0 p-8">
                 <div className="flex flex-col md:flex-row gap-8">
-                  {/* Imagen de portada */}
+                  {/* Cover Image */}
                   <div className="relative w-48 h-72 shrink-0">
                     <Image
                       src={anime.coverImage.large}
@@ -88,7 +91,7 @@ export default function AnimePage({ params }: { params: { id: string } }) {
                     />
                   </div>
 
-                  {/* Información */}
+                  {/* Information */}
                   <div className="flex-1">
                     <div className="flex items-center gap-4 mb-4">
                       <Badge className="bg-yellow-500 text-black px-3 py-1">
@@ -96,7 +99,7 @@ export default function AnimePage({ params }: { params: { id: string } }) {
                         {(anime.averageScore / 10).toFixed(1)}
                       </Badge>
                       <Badge variant="outline" className="border-slate-700 text-slate-300">
-                        {anime.episodes} episodios
+                        {anime.episodes} episodes
                       </Badge>
                       <Badge variant="outline" className="border-slate-700 text-slate-300">
                         {anime.status}
@@ -104,6 +107,16 @@ export default function AnimePage({ params }: { params: { id: string } }) {
                       <Badge variant="outline" className="border-slate-700 text-slate-300">
                         {anime.seasonYear}
                       </Badge>
+                    </div>
+                    <div className="flex items-center gap-4 mb-4">
+                      <Button
+                        variant="outline"
+                        className="flex-1 bg-orange-600/20 text-orange-100 hover:bg-orange-600/30 border-orange-500/50 hover:border-orange-500 transition-all duration-300 font-medium flex items-center justify-center gap-2"
+                        onClick={() => window.open(getCrunchyrollUrl(anime.title.romaji), '_blank')}
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        Watch on Crunchyroll
+                      </Button>
                     </div>
 
                     <h1 className="text-4xl font-bold text-white mb-2">
@@ -126,22 +139,24 @@ export default function AnimePage({ params }: { params: { id: string } }) {
                     </div>
 
                     <p className="text-slate-300 mb-6 leading-relaxed"
-                       dangerouslySetInnerHTML={{ __html: anime.description || 'No hay descripción disponible.' }}>
+                       dangerouslySetInnerHTML={{ __html: anime.description || 'No description available.' }}>
                     </p>
 
                     {user && (
-                      <div className="flex gap-4">
+                      <div className="flex items-center gap-4">
                         <Button
-                          onClick={() => {}} // TODO: Implementar addToWatchlist
-                          className="bg-purple-600 hover:bg-purple-700"
+                          onClick={() => {}} // TODO: Implement addToWatchlist
+                          className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-all duration-300 shadow-lg hover:shadow-indigo-500/30 flex items-center justify-center gap-2"
                         >
-                          Añadir a Planificados
+                          <BookmarkPlus className="w-4 h-4" />
+                          Add to Watchlist
                         </Button>
                         <Button
-                          onClick={() => {}} // TODO: Implementar addToWatchlist
-                          className="bg-green-600 hover:bg-green-700"
+                          onClick={() => {}} // TODO: Implement addToWatchlist
+                          className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold transition-all duration-300 shadow-lg hover:shadow-green-500/30 flex items-center justify-center gap-2"
                         >
-                          Empezar a Ver
+                          <Play className="w-4 h-4" />
+                          Start Watching
                         </Button>
                       </div>
                     )}

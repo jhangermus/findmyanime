@@ -18,6 +18,7 @@ export interface Anime {
   genres: string[]
   seasonYear: number
   season: string
+  siteUrl: string
 }
 
 export async function searchAnime(search: string): Promise<Anime[]> {
@@ -152,6 +153,7 @@ export async function getAnimeById(id: number): Promise<Anime> {
         genres
         seasonYear
         season
+        siteUrl
       }
     }
   `

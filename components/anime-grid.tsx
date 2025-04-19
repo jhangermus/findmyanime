@@ -7,8 +7,9 @@ import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { StarIcon } from "lucide-react"
+import { StarIcon, BookmarkPlus } from "lucide-react"
 import type { AnimeData } from "@/types/anime"
+import { useAuth } from '@/context/auth-context'
 
 interface AnimeGridProps {
   filters: {
@@ -37,6 +38,7 @@ export default function AnimeGrid({ filters }: AnimeGridProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const [loadingMore, setLoadingMore] = useState(false)
   const [isAutoLoading, setIsAutoLoading] = useState(false)
+  const { user } = useAuth()
 
   const fetchAnimes = async (page: number) => {
     try {
@@ -153,45 +155,64 @@ export default function AnimeGrid({ filters }: AnimeGridProps) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredAnimes.map((anime) => (
-          <div key={anime.id} className="bg-slate-900 rounded-lg overflow-hidden hover:ring-2 hover:ring-purple-500 transition-all">
-            <Link href={`/anime/${anime.id}`}>
-              <div className="relative aspect-[3/4] w-full">
-                <Image
-                  src={anime.coverImage.large}
-                  alt={anime.title.english || anime.title.romaji}
-                  fill
-                  className="object-cover"
-                />
-                <div className="absolute top-2 right-2 bg-yellow-500 text-black px-2 py-1 rounded-full text-sm font-bold">
-                  ★ {(anime.averageScore / 10).toFixed(1)}
-                </div>
+          <div key={anime.id} className="bg-slate-900 rounded-lg overflow-hidden hover:ring-2 hover:ring-purple-500/50 transition-all">
+            <div className="relative aspect-[3/4] w-full">
+              <Image
+                src={anime.coverImage.large}
+                alt={anime.title.english || anime.title.romaji}
+                fill
+                className="object-cover"
+              />
+              <div className="absolute top-2 right-2 bg-yellow-500 text-black px-2 py-1 rounded-full text-sm font-bold">
+                ★ {(anime.averageScore / 10).toFixed(1)}
               </div>
-              <div className="p-4">
-                <h3 className="text-lg font-semibold text-slate-200 line-clamp-1">
-                  {anime.title.english || anime.title.romaji}
-                </h3>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {anime.genres.slice(0, 3).map(genre => (
-                    <span 
-                      key={genre} 
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        filters.genres.includes(genre)
-                          ? "bg-purple-600 text-white"
-                          : "bg-slate-800 text-slate-300"
-                      }`}
-                    >
-                      {genre}
-                    </span>
-                  ))}
-                </div>
-                <p className="mt-2 text-sm text-slate-400 line-clamp-2"
-                   dangerouslySetInnerHTML={{ __html: anime.description || 'No description available' }}>
-                </p>
-                <div className="mt-2 text-sm text-slate-500">
-                  {anime.episodes} episodios • {anime.seasonYear}
-                </div>
+            </div>
+            <div className="p-3">
+              <h3 className="text-lg font-semibold text-slate-200 line-clamp-1 mb-2">
+                {anime.title.english || anime.title.romaji}
+              </h3>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {anime.genres.slice(0, 3).map(genre => (
+                  <span 
+                    key={genre} 
+                    className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300"
+                  >
+                    {genre}
+                  </span>
+                ))}
               </div>
-            </Link>
+              <p className="text-sm text-slate-400 line-clamp-2 mb-2"
+                 dangerouslySetInnerHTML={{ __html: anime.description || 'No description available' }}>
+              </p>
+              <div className="text-sm text-slate-500 mb-3">
+                {anime.episodes} episodios • {anime.seasonYear}
+              </div>
+              <div className="flex w-full space-x-2">
+                <Button 
+                  asChild
+                  className="h-8 flex-1 min-w-0 bg-[#6366f1] hover:bg-[#4f46e5] text-white text-xs"
+                >
+                  <Link href={`/anime/${anime.id}`} className="px-2 w-full truncate flex items-center justify-center">
+                    View Details
+                  </Link>
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (!user) {
+                      window.location.href = '/login'
+                      return
+                    }
+                    // TODO: Implement addToWatchlist
+                  }}
+                  className="h-8 flex-1 min-w-0 bg-[#9333ea] hover:bg-[#7e22ce] text-white text-xs px-2"
+                >
+                  <div className="w-full truncate flex items-center justify-center gap-1">
+                    <BookmarkPlus className="w-3 h-3 shrink-0" />
+                    Add to Watchlist
+                  </div>
+                </Button>
+              </div>
+            </div>
           </div>
         ))}
       </div>
