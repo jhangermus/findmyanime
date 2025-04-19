@@ -1,92 +1,55 @@
 "use client"
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { useAuth } from "@/context/auth-context"
-import { useLocalWatchlist } from "@/context/local-watchlist-context"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { PlusCircle, CheckCircle, ListPlus } from "lucide-react"
-import Link from "next/link"
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { useAuth } from '@/context/auth-context'
+import { useLocalWatchlist } from '@/context/local-watchlist-context'
+import { toast } from 'sonner'
+import type { WatchlistItem } from '@/lib/supabase'
 
 interface AddToWatchlistButtonProps {
-  animeId: string
+  animeId: number
+  title: string
 }
 
-export function AddToWatchlistButton({ animeId }: AddToWatchlistButtonProps) {
-  const { user, watchlist: userWatchlist, addToWatchlist: addToUserWatchlist } = useAuth()
-  const { watchlist: localWatchlist, addToWatchlist: addToLocalWatchlist } = useLocalWatchlist()
+export function AddToWatchlistButton({ animeId, title }: AddToWatchlistButtonProps) {
+  const { user, watchlist, addToWatchlist: addToUserWatchlist } = useAuth()
+  const { addToWatchlist: addToLocalWatchlist } = useLocalWatchlist()
   const [isLoading, setIsLoading] = useState(false)
 
-  const isInWatchlist = user
-    ? userWatchlist.some((item) => item.anime_id === animeId)
-    : localWatchlist.some((item) => item.anime_id === animeId)
-
-  const handleAddToWatchlist = async (status: 'watching' | 'completed' | 'planning' | 'dropped') => {
+  const handleAddToWatchlist = async (status: WatchlistItem['status']) => {
     try {
       setIsLoading(true)
+
       if (user) {
         await addToUserWatchlist(animeId, status)
+        toast.success(`${title} added to your watchlist`)
       } else {
         addToLocalWatchlist(animeId, status)
+        toast.success(
+          `${title} added to your temporary watchlist. Create an account to save it permanently!`
+        )
       }
     } catch (error) {
       console.error('Error adding to watchlist:', error)
+      toast.error('Failed to add to watchlist')
     } finally {
       setIsLoading(false)
     }
   }
 
-  if (!user) {
-    return (
-      <Link href="/auth">
-        <Button 
-          variant="secondary" 
-          size="sm" 
-          className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium shadow-lg hover:shadow-purple-500/20 transition-all"
-        >
-          <ListPlus className="h-4 w-4 mr-2" />
-          Sign in to add to watchlist
-        </Button>
-      </Link>
-    )
-  }
-
-  if (isInWatchlist) {
-    return (
-      <Button variant="outline" size="sm" className="w-full" disabled>
-        <CheckCircle className="h-4 w-4 mr-2" />
-        In your watchlist
-      </Button>
-    )
-  }
+  const isInWatchlist = user
+    ? watchlist.some((item) => item.anime_id === animeId)
+    : false
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="w-full" disabled={isLoading}>
-          <PlusCircle className="h-4 w-4 mr-2" />
-          Add to watchlist
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        <DropdownMenuItem onClick={() => handleAddToWatchlist('watching')}>
-          Currently Watching
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleAddToWatchlist('completed')}>
-          Completed
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleAddToWatchlist('planning')}>
-          Plan to Watch
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleAddToWatchlist('dropped')}>
-          Dropped
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Button
+      variant="secondary"
+      size="sm"
+      disabled={isLoading || isInWatchlist}
+      onClick={() => handleAddToWatchlist('PLANNING')}
+    >
+      {isInWatchlist ? 'In Watchlist' : 'Add to Watchlist'}
+    </Button>
   )
 }

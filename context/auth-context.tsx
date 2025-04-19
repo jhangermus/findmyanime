@@ -20,9 +20,9 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string, username: string) => Promise<void>
   signOut: () => Promise<void>
-  addToWatchlist: (animeId: string, status: WatchlistItem['status']) => Promise<void>
-  updateWatchlistStatus: (watchlistId: string, status: WatchlistItem['status']) => Promise<void>
-  removeFromWatchlist: (watchlistId: string) => Promise<void>
+  addToWatchlist: (animeId: number, status: WatchlistItem['status']) => Promise<void>
+  updateWatchlistStatus: (watchlistId: number, status: WatchlistItem['status']) => Promise<void>
+  removeFromWatchlist: (watchlistId: number) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -93,53 +93,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signUp = async (email: string, password: string, username: string) => {
-    try {
-      console.log("Verificando si el email ya existe...")
-      const { error: checkError } = await supabase.rpc('check_email_exists', { 
-        email_input: email 
-      })
+    const { error: signUpError, data } = await supabase.auth.signUp({
+      email,
+      password,
+    })
 
-      if (checkError) {
-        console.error("Error al verificar email:", checkError)
-        throw new Error(checkError.message)
-      }
+    if (signUpError) throw signUpError
 
-      console.log("Email disponible, iniciando proceso de registro en Supabase")
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-      })
-
-      if (signUpError) {
-        console.error("Error en auth.signUp:", signUpError)
-        throw signUpError
-      }
-
-      if (!authData.user) {
-        console.error("No se recibieron datos del usuario después del registro")
-        throw new Error("No se pudo crear el usuario")
-      }
-
-      console.log("Usuario creado exitosamente, creando perfil...")
-      const { error: profileError } = await supabase.from("profiles").insert([
+    if (data.user) {
+      const { error: profileError } = await supabase.from('profiles').insert([
         {
-          user_id: authData.user.id,
+          user_id: data.user.id,
           username,
           email,
-          full_name: null,
-          bio: null
         },
       ])
 
-      if (profileError) {
-        console.error("Error al crear perfil:", profileError)
-        throw profileError
-      }
-
-      console.log("Perfil creado exitosamente")
-    } catch (error) {
-      console.error("Error general en signUp:", error)
-      throw error
+      if (profileError) throw profileError
     }
   }
 
@@ -148,7 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error
   }
 
-  const addToWatchlist = async (animeId: string, status: WatchlistItem['status']) => {
+  const addToWatchlist = async (animeId: number, status: WatchlistItem['status']) => {
     if (!user) throw new Error('User not authenticated')
 
     const { data, error } = await supabase
@@ -167,7 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setWatchlist((prev) => [...prev, data])
   }
 
-  const updateWatchlistStatus = async (watchlistId: string, status: WatchlistItem['status']) => {
+  const updateWatchlistStatus = async (watchlistId: number, status: WatchlistItem['status']) => {
     const { error } = await supabase
       .from('watchlist')
       .update({ status })
@@ -179,7 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     )
   }
 
-  const removeFromWatchlist = async (watchlistId: string) => {
+  const removeFromWatchlist = async (watchlistId: number) => {
     const { error } = await supabase.from('watchlist').delete().eq('id', watchlistId)
 
     if (error) throw error

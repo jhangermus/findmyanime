@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { getPopularAnime, type Anime } from '@/lib/anilist'
+import { cachePopularAnime } from '@/lib/anime-cache'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
@@ -10,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { StarIcon, BookmarkPlus } from "lucide-react"
 import type { AnimeData } from "@/types/anime"
 import { useAuth } from '@/context/auth-context'
+import { useToast } from "@/components/ui/use-toast"
 
 interface AnimeGridProps {
   filters: {
@@ -39,10 +41,18 @@ export default function AnimeGrid({ filters }: AnimeGridProps) {
   const [loadingMore, setLoadingMore] = useState(false)
   const [isAutoLoading, setIsAutoLoading] = useState(false)
   const { user } = useAuth()
+  const { toast } = useToast()
 
   const fetchAnimes = async (page: number) => {
     try {
       const data = await getPopularAnime(page, 50)
+      // Cachear los animes populares
+      try {
+        await cachePopularAnime(data.animes as Anime[])
+      } catch (cacheError) {
+        console.error('Error al cachear animes:', cacheError)
+        // Continuamos aunque falle el caché
+      }
       return {
         newAnimes: data.animes as Anime[],
         newPageInfo: data.pageInfo
@@ -136,6 +146,31 @@ export default function AnimeGrid({ filters }: AnimeGridProps) {
     filterAnimes()
   }, [filters, animes])
 
+  const handleAddToWatchlist = (anime: Anime) => {
+    if (!user) {
+      // Aquí iría la lógica para guardar en localStorage
+      
+      // Mostrar toast amigable
+      toast({
+        title: "¡Anime agregado a tu watchlist temporal! 📝",
+        description: "Puedes crear una cuenta cuando quieras para guardar tu lista permanentemente y acceder a más funciones.",
+        action: (
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-purple-500 text-purple-500 hover:bg-purple-500/10"
+            onClick={() => window.location.href = '/login'}
+          >
+            Crear cuenta
+          </Button>
+        ),
+        duration: 5000,
+      })
+      return
+    }
+    // TODO: Implement addToWatchlist for registered users
+  }
+
   if (loading) return <div className="text-center text-slate-400">Cargando animes...</div>
   if (error) return <div className="text-center text-red-400">{error}</div>
 
@@ -197,13 +232,7 @@ export default function AnimeGrid({ filters }: AnimeGridProps) {
                   </Link>
                 </Button>
                 <Button
-                  onClick={() => {
-                    if (!user) {
-                      window.location.href = '/login'
-                      return
-                    }
-                    // TODO: Implement addToWatchlist
-                  }}
+                  onClick={() => handleAddToWatchlist(anime)}
                   className="h-8 flex-1 min-w-0 bg-[#9333ea] hover:bg-[#7e22ce] text-white text-xs px-2"
                 >
                   <div className="w-full truncate flex items-center justify-center gap-1">

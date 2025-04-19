@@ -6,9 +6,9 @@ import type { AnimeData } from '@/types/anime'
 
 interface LocalWatchlistContextType {
   watchlist: WatchlistItem[]
-  addToWatchlist: (animeId: string, status: WatchlistItem['status']) => void
-  removeFromWatchlist: (animeId: string) => void
-  updateWatchlistStatus: (animeId: string, status: WatchlistItem['status']) => void
+  addToWatchlist: (animeId: number, status: WatchlistItem['status']) => void
+  removeFromWatchlist: (animeId: number) => void
+  updateWatchlistStatus: (animeId: number, status: WatchlistItem['status']) => void
   migrateToUserAccount?: (userId: string) => Promise<void>
 }
 
@@ -30,9 +30,9 @@ export function LocalWatchlistProvider({ children }: { children: React.ReactNode
     localStorage.setItem('localWatchlist', JSON.stringify(watchlist))
   }, [watchlist])
 
-  const addToWatchlist = (animeId: string, status: WatchlistItem['status']) => {
+  const addToWatchlist = (animeId: number, status: WatchlistItem['status']) => {
     const newItem: WatchlistItem = {
-      id: `local-${Date.now()}`,
+      id: Date.now(),
       user_id: 'local',
       anime_id: animeId,
       status,
@@ -42,11 +42,11 @@ export function LocalWatchlistProvider({ children }: { children: React.ReactNode
     setWatchlist((prev) => [...prev, newItem])
   }
 
-  const removeFromWatchlist = (animeId: string) => {
+  const removeFromWatchlist = (animeId: number) => {
     setWatchlist((prev) => prev.filter((item) => item.anime_id !== animeId))
   }
 
-  const updateWatchlistStatus = (animeId: string, status: WatchlistItem['status']) => {
+  const updateWatchlistStatus = (animeId: number, status: WatchlistItem['status']) => {
     setWatchlist((prev) =>
       prev.map((item) =>
         item.anime_id === animeId
