@@ -28,15 +28,15 @@ export function PopularAnime() {
     fetchAnimes()
   }, [])
 
-  if (loading) return <div>Cargando animes populares...</div>
-  if (error) return <div>{error}</div>
+  if (loading) return <div className="text-slate-400">Cargando animes populares...</div>
+  if (error) return <div className="text-red-400">{error}</div>
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       {animes.map((anime) => (
-        <Card key={anime.id} className="flex flex-col">
+        <Card key={anime.id} className="bg-slate-900 border-slate-800 hover:border-slate-700 transition-colors">
           <CardHeader>
-            <CardTitle className="line-clamp-1">
+            <CardTitle className="line-clamp-1 text-slate-200">
               {anime.title.english || anime.title.romaji}
             </CardTitle>
           </CardHeader>
@@ -49,13 +49,13 @@ export function PopularAnime() {
                 className="object-cover rounded-md"
               />
             </div>
-            <p className="mt-2 text-sm line-clamp-3" 
+            <p className="mt-2 text-sm text-slate-400 line-clamp-3" 
                dangerouslySetInnerHTML={{ __html: anime.description || 'No description available' }}>
             </p>
           </CardContent>
           <CardFooter>
             <Link href={`/anime/${anime.id}`} className="w-full">
-              <Button className="w-full">Ver detalles</Button>
+              <Button className="w-full bg-purple-600 hover:bg-purple-700">Ver detalles</Button>
             </Link>
           </CardFooter>
         </Card>

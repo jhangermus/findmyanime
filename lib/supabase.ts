@@ -15,11 +15,12 @@ export type UserProfile = {
 }
 
 export type WatchlistItem = {
-  id: string
+  id: number
   user_id: string
-  anime_id: string
-  status: 'watching' | 'completed' | 'planning' | 'dropped'
+  anime_id: number
+  status: 'WATCHING' | 'COMPLETED' | 'PLANNING' | 'DROPPED' | 'PAUSED'
   rating?: number
+  notes?: string
   created_at: string
   updated_at: string
 } 

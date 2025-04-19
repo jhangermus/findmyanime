@@ -63,10 +63,17 @@ export async function searchAnime(search: string): Promise<Anime[]> {
   return json.data.Page.media
 }
 
-export async function getPopularAnime(): Promise<Anime[]> {
+export async function getPopularAnime(page: number = 1, perPage: number = 50) {
   const query = `
-    query {
-      Page(page: 1, perPage: 20) {
+    query ($page: Int, $perPage: Int) {
+      Page(page: $page, perPage: $perPage) {
+        pageInfo {
+          total
+          currentPage
+          lastPage
+          hasNextPage
+          perPage
+        }
         media(type: ANIME, sort: POPULARITY_DESC) {
           id
           title {
@@ -74,33 +81,54 @@ export async function getPopularAnime(): Promise<Anime[]> {
             english
             native
           }
+          description
           coverImage {
             large
             medium
           }
-          description
+          bannerImage
           episodes
           status
+          seasonYear
           averageScore
           genres
-          seasonYear
-          season
+          studios {
+            nodes {
+              name
+            }
+          }
         }
       }
     }
   `
 
-  const response = await fetch(ANILIST_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
-    body: JSON.stringify({ query })
-  })
+  const variables = {
+    page,
+    perPage
+  }
 
-  const json = await response.json()
-  return json.data.Page.media
+  try {
+    const response = await fetch('https://graphql.anilist.co', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        query,
+        variables
+      })
+    })
+
+    const { data } = await response.json()
+    return {
+      animes: data.Page.media,
+      pageInfo: data.Page.pageInfo
+    }
+  } catch (error) {
+    console.error('Error fetching popular anime:', error)
+    throw error
+  }
 }
 
 export async function getAnimeById(id: number): Promise<Anime> {

@@ -7,10 +7,25 @@ import FilterSection from "@/components/filter-section"
 import ChatButton from "@/components/chat-button"
 import GuidedTour from "@/components/guided-tour"
 import { MainNav } from "@/components/main-nav"
-import { animeData } from "@/data/anime-data"
+import { useState } from "react"
+
+interface Filters {
+  genres: string[]
+  minEpisodes: number
+  maxEpisodes: number
+}
 
 export default function Home() {
   const { user } = useAuth()
+  const [filters, setFilters] = useState<Filters>({
+    genres: [],
+    minEpisodes: 1,
+    maxEpisodes: 100
+  })
+
+  const handleFiltersChange = (newFilters: Filters) => {
+    setFilters(newFilters)
+  }
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-200">
@@ -41,12 +56,16 @@ export default function Home() {
           <AnimeDaily />
         </div>
 
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold mb-6">Popular Anime</h2>
+        </div>
+
         <div className="mt-12 grid grid-cols-1 lg:grid-cols-4 gap-8">
           <div className="lg:col-span-1" data-tour="filters">
-            <FilterSection />
+            <FilterSection onFiltersChange={handleFiltersChange} />
           </div>
           <div className="lg:col-span-3" data-tour="anime-grid">
-            <AnimeGrid initialAnimeList={animeData} />
+            <AnimeGrid filters={filters} />
           </div>
         </div>
 

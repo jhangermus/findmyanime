@@ -1,69 +1,119 @@
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
+"use client"
+
+import { useEffect, useState } from "react"
+import { getPopularAnime, type Anime } from "@/lib/anilist"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { StarIcon } from "lucide-react"
-import { AddToWatchlistButton } from "@/components/add-to-watchlist-button"
+import Image from "next/image"
+import Link from "next/link"
 
 export default function AnimeDaily() {
-  // This would typically come from an API or database
-  const dailyAnime = {
-    id: "1",
-    title: "Attack on Titan",
-    description:
-      "In a world where humanity lives within cities surrounded by enormous walls that protect them from gigantic man-eating humanoids referred to as Titans, the story follows Eren Yeager, who vows to retake the world after a Titan brings about the destruction of his hometown and the death of his mother.",
-    image: "/placeholder.svg?height=600&width=400",
-    genres: ["Action", "Drama", "Fantasy"],
-    episodes: 75,
-    rating: 9.0,
-    studio: "Wit Studio / MAPPA",
-    year: 2013,
+  const [anime, setAnime] = useState<Anime | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchRandomAnime = async () => {
+      try {
+        const { animes } = await getPopularAnime(1, 50)
+        // Seleccionar un anime aleatorio de los primeros 50
+        const randomAnime = animes[Math.floor(Math.random() * animes.length)]
+        setAnime(randomAnime)
+      } catch (err) {
+        setError("Error al cargar el anime del día")
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchRandomAnime()
+  }, [])
+
+  if (loading) {
+    return (
+      <Card className="w-full h-[400px] animate-pulse bg-slate-800 border-slate-700">
+        <CardContent className="p-0 h-full bg-slate-700" />
+      </Card>
+    )
+  }
+
+  if (error || !anime) {
+    return (
+      <Card className="w-full border-slate-800 bg-slate-900">
+        <CardContent className="p-6 text-center text-slate-400">
+          {error || "No se pudo cargar el anime del día"}
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
-    <section className="rounded-xl overflow-hidden bg-slate-900 shadow-lg border border-slate-800">
-      <div className="relative">
-        <div className="absolute top-4 left-4 z-10">
-          <Badge className="bg-purple-600 hover:bg-purple-700">Anime Daily</Badge>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="relative h-[400px] md:h-auto">
-            <Image src={dailyAnime.image || "/placeholder.svg"} alt={dailyAnime.title} fill className="object-cover" />
+    <Card className="w-full border-slate-800 bg-slate-900 overflow-hidden">
+      <CardContent className="p-0">
+        <div className="relative">
+          {/* Banner/Cover Image */}
+          <div className="relative w-full h-[400px]">
+            <Image
+              src={anime.coverImage.large}
+              alt={anime.title.english || anime.title.romaji}
+              fill
+              className="object-cover"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
           </div>
-          <div className="p-6 md:col-span-2 flex flex-col justify-between">
-            <div>
-              <h2 className="text-3xl font-bold mb-2 text-white">{dailyAnime.title}</h2>
-              <div className="flex items-center mb-4">
-                <div className="flex items-center mr-4">
-                  {[...Array(5)].map((_, i) => (
-                    <StarIcon
-                      key={i}
-                      className={`w-5 h-5 ${i < Math.floor(dailyAnime.rating / 2) ? "text-yellow-500 fill-yellow-500" : "text-gray-600"}`}
-                    />
-                  ))}
-                  <span className="ml-2 text-slate-400">{dailyAnime.rating}/10</span>
-                </div>
-                <div className="text-slate-400">{dailyAnime.episodes} episodes</div>
-              </div>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {dailyAnime.genres.map((genre) => (
-                  <Badge key={genre} variant="outline" className="border-slate-700 text-slate-300">
-                    {genre}
+
+          {/* Content overlay */}
+          <div className="absolute bottom-0 left-0 right-0 p-6">
+            <div className="flex items-start justify-between">
+              <div className="w-full">
+                <div className="flex items-center justify-between mb-4">
+                  <Badge className="bg-purple-600 hover:bg-purple-700">
+                    Anime del Día
                   </Badge>
-                ))}
+                  <Badge className="bg-yellow-500 text-black">
+                    <StarIcon className="w-4 h-4 mr-1" />
+                    {(anime.averageScore / 10).toFixed(1)}
+                  </Badge>
+                </div>
+                <h2 className="text-3xl font-bold text-white mb-2">
+                  {anime.title.english || anime.title.romaji}
+                </h2>
+                <div className="flex items-center gap-2 mb-4">
+                  <Badge variant="outline" className="border-slate-700 text-slate-300">
+                    {anime.episodes} episodios
+                  </Badge>
+                  <Badge variant="outline" className="border-slate-700 text-slate-300">
+                    {anime.seasonYear}
+                  </Badge>
+                </div>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {anime.genres.map((genre) => (
+                    <Badge
+                      key={genre}
+                      variant="outline"
+                      className="border-purple-700 text-purple-300"
+                    >
+                      {genre}
+                    </Badge>
+                  ))}
+                </div>
+                <p className="text-slate-300 line-clamp-3 mb-4"
+                   dangerouslySetInnerHTML={{ __html: anime.description || "No hay descripción disponible." }}>
+                </p>
+                <Link href={`/anime/${anime.id}`}>
+                  <Button className="bg-purple-600 hover:bg-purple-700">
+                    Ver más detalles
+                  </Button>
+                </Link>
               </div>
-              <p className="text-slate-300 mb-4 line-clamp-4 md:line-clamp-none">{dailyAnime.description}</p>
-              <div className="text-sm text-slate-400 mb-6">
-                <p>Studio: {dailyAnime.studio}</p>
-                <p>Year: {dailyAnime.year}</p>
-              </div>
-            </div>
-            <div className="flex gap-4">
-              <Button className="bg-purple-600 hover:bg-purple-700">Watch Now</Button>
-              <AddToWatchlistButton animeId={dailyAnime.id} />
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </CardContent>
+    </Card>
   )
 }
