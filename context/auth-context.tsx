@@ -2,7 +2,17 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import type { UserProfile, WatchlistItem } from '@/lib/supabase'
+import type { WatchlistItem } from '@/lib/supabase'
+
+interface UserProfile {
+  id: number
+  user_id: string
+  username: string
+  email: string
+  full_name: string | null
+  bio: string | null
+  created_at: string
+}
 
 interface AuthContextType {
   user: UserProfile | null
@@ -48,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', userId)
+      .eq('user_id', userId)
       .single()
 
     if (error) {
@@ -83,25 +93,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signUp = async (email: string, password: string, username: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    })
+    try {
+      console.log("Verificando si el email ya existe...")
+      const { error: checkError } = await supabase.rpc('check_email_exists', { 
+        email_input: email 
+      })
 
-    if (error) throw error
+      if (checkError) {
+        console.error("Error al verificar email:", checkError)
+        throw new Error(checkError.message)
+      }
 
-    if (data.user) {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          {
-            id: data.user.id,
-            username,
-            email,
-          },
-        ])
+      console.log("Email disponible, iniciando proceso de registro en Supabase")
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+      })
 
-      if (profileError) throw profileError
+      if (signUpError) {
+        console.error("Error en auth.signUp:", signUpError)
+        throw signUpError
+      }
+
+      if (!authData.user) {
+        console.error("No se recibieron datos del usuario después del registro")
+        throw new Error("No se pudo crear el usuario")
+      }
+
+      console.log("Usuario creado exitosamente, creando perfil...")
+      const { error: profileError } = await supabase.from("profiles").insert([
+        {
+          user_id: authData.user.id,
+          username,
+          email,
+          full_name: null,
+          bio: null
+        },
+      ])
+
+      if (profileError) {
+        console.error("Error al crear perfil:", profileError)
+        throw profileError
+      }
+
+      console.log("Perfil creado exitosamente")
+    } catch (error) {
+      console.error("Error general en signUp:", error)
+      throw error
     }
   }
 
@@ -117,7 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .from('watchlist')
       .insert([
         {
-          user_id: user.id,
+          user_id: user.user_id,
           anime_id: animeId,
           status,
         },

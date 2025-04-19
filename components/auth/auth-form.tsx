@@ -30,16 +30,29 @@ export function AuthForm() {
         router.push("/")
       } else {
         console.log("Iniciando registro con:", { email, password, username })
-        await signUp(email, password, username)
-        console.log("Registro exitoso")
-        router.push("/")
+        try {
+          await signUp(email, password, username)
+          console.log("Registro exitoso")
+          router.push("/")
+        } catch (signUpError) {
+          console.error("Error detallado del registro:", signUpError)
+          if (signUpError instanceof Error) {
+            if (signUpError.message.includes('Este email esta siendo usado')) {
+              setError("Este email ya está registrado. Por favor, usa otro email o inicia sesión.")
+            } else {
+              setError(signUpError.message)
+            }
+          } else {
+            setError("Error durante el registro: " + JSON.stringify(signUpError))
+          }
+        }
       }
     } catch (err) {
       console.error("Error durante la autenticación:", err)
       if (err instanceof Error) {
         setError(err.message)
       } else {
-        setError("An unexpected error occurred. Please try again.")
+        setError("Error inesperado: " + JSON.stringify(err))
       }
     } finally {
       setIsLoading(false)

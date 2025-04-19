@@ -27,13 +27,7 @@ export function MainNav() {
               Sign Out
             </Button>
           </>
-        ) : (
-          <Link href="/auth">
-            <Button variant="ghost" size="sm">
-              Sign In
-            </Button>
-          </Link>
-        )}
+        ) : null}
       </div>
     </nav>
   )
